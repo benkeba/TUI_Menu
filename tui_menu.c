@@ -1,15 +1,14 @@
-
 // tui_menu.c — Egyszerű menüsáv + legördülő menük megvalósítása a TUI-hoz
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>      // sprintf miatt
 #include "tui_menu.h"
 
 static void draw_status_bar(const char **headers, int hno, int idx)
 {
     int W,H; tui_size(&W,&H);
     // státuszsor (2. sor) — inverz háttér
-    // először egy világos sor szöveggel
-    TuiRect r = {0,1,W,1};
+    TuiRect r = (TuiRect){0,1,W,1};
     tui_fill(r, ' ');
     int posinc = (W-2) / hno; if (posinc <= 0) posinc = 1;
     int xp0 = 1 + posinc/2; // középre helyezés
@@ -25,8 +24,12 @@ static void draw_status_bar(const char **headers, int hno, int idx)
 int tui_menu_run(TuiMenu *menu, int start_x, int start_y)
 {
     // popup keret számítása
-    int maxlen = 0; for (int i=0;i<menu->count;++i){ int L=(int)strlen(menu->items[i].label); if(L>maxlen)maxlen=L; }
-    TuiRect r = { start_x, start_y, maxlen + 4, menu->count + 2 };
+    int maxlen = 0; 
+    for (int i=0;i<menu->count;++i){
+        int L=(int)strlen(menu->items[i].label); 
+        if(L>maxlen)maxlen=L; 
+    }
+    TuiRect r = (TuiRect){ start_x, start_y, maxlen + 4, menu->count + 2 };
     tui_draw_box(menu->title, r, TUI_ATTR_NONE, TUI_ATTR_BRIGHT|TUI_ATTR_REVERSE);
     int list_x = r.x + 2, list_y = r.y + 1;
 
@@ -71,9 +74,17 @@ int tui_menubar_loop(const char **headers, int hno, int *inout_index, TuiMenu *m
     for (;;) {
         int key = tui_getkey();
         switch (key) {
-            case TUI_KEY_LEFT:  idx = (idx>0)? idx-1 : hno-1; draw_status_bar(headers, hno, idx); break;
-            case TUI_KEY_RIGHT: idx = (idx<hno-1)? idx+1 : 0; draw_status_bar(headers, hno, idx); break;
-            case TUI_KEY_ESC:   *inout_index = idx; return -1; // kilépés
+            case TUI_KEY_LEFT:  
+                idx = (idx>0)? idx-1 : hno-1; 
+                draw_status_bar(headers, hno, idx); 
+                break;
+            case TUI_KEY_RIGHT: 
+                idx = (idx<hno-1)? idx+1 : 0; 
+                draw_status_bar(headers, hno, idx); 
+                break;
+            case TUI_KEY_ESC:   
+                *inout_index = idx; 
+                return -1; // kilépés
             case TUI_KEY_CR:
             case TUI_KEY_ENTER:
             {
@@ -89,7 +100,8 @@ int tui_menubar_loop(const char **headers, int hno, int *inout_index, TuiMenu *m
                         // kis üzenet
                         tui_goto(2, H-2);
                         char msg[128];
-                        snprintf(msg, sizeof(msg), "[menu id=%d] Press any key...", ret);
+                        // snprintf -> sprintf (MSVC link fix)
+                        sprintf(msg, "[menu id=%d] Press any key...", ret);
                         tui_puts_attr(msg, TUI_ATTR_BRIGHT);
                         (void)tui_getkey();
                         // képernyő frissítése
@@ -104,7 +116,11 @@ int tui_menubar_loop(const char **headers, int hno, int *inout_index, TuiMenu *m
                     int K = toupper(key);
                     // kezdőbetű választás
                     for (int j=0;j<hno;++j) {
-                        if (headers[j] && toupper(headers[j][0]) == K) { idx = j; draw_status_bar(headers,hno,idx); break; }
+                        if (headers[j] && toupper(headers[j][0]) == K) { 
+                            idx = j; 
+                            draw_status_bar(headers,hno,idx); 
+                            break; 
+                        }
                     }
                 }
         }
